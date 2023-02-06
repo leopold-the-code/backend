@@ -1,4 +1,15 @@
-## Local installation
+## Installation
+
+0. Clone and cd to repo
+
+```bash
+git clone https://github.com/leopold-the-code/backend.git
+cd backend
+```
+
+Then you can do local or docker installation
+
+### Local installation
 
 1. Install `poetry` for python dependencies management
 
@@ -22,7 +33,7 @@ python -m backend
 Now server is running on http://127.0.0.1:8000/
 With swagger on http://127.0.0.1:8000/docs
 
-## Docker installation
+### Docker installation
 
 1. Build image
 

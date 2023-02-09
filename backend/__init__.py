@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Request, status, Response
+from fastapi import FastAPI, Request, status, Response, Depends
 from pydantic import BaseModel
 from datetime import date
 from base64 import b64decode, b64encode
 from secrets import token_bytes
 
-token_lenght = 10
+token_lenght = 64
 
 
 class User(BaseModel):
@@ -16,7 +16,18 @@ class User(BaseModel):
     password: str
 
 
+class TokenResponse(BaseModel):
+    token: str
+
+
 app = FastAPI()
+
+
+def auth(request: Request, response: Response):
+    is_authorized = check_token(request)
+    if not is_authorized:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+    return response
 
 
 @app.get("/")
@@ -25,44 +36,32 @@ async def root():
 
 
 @app.post("/register")
-async def register(user: User):
-    return {"token": generate_token()}
+async def register(user: User) -> TokenResponse:
+    return TokenResponse(token=generate_token())
 
 
-@app.get("/people")
-async def get_people(request: Request, response: Response):
-    is_authorized = check_token(request)
-    if not is_authorized:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
+@app.get("/feed")
+async def get_people(auth: dict = Depends(auth)):
     a = {"id": 0, "name": "test", "surname": "test", "description": "test"}
     list = []
-    for i in range(10):
+    for _ in range(10):
         list.append(a)
     return {"users": list}
 
 
 @app.post("/tag", status_code=200)
-async def add_tags(request: Request, response: Response):
-    is_authorized = check_token(request)
-    if not is_authorized:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-    return
+async def add_tags(auth: dict = Depends(auth)):
+    pass
 
 
 @app.post("/like")
-async def like(request: Request, response: Response):
-    is_authorized = check_token(request)
-    if not is_authorized:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-    return
+async def like(auth: dict = Depends(auth)):
+    pass
 
 
 @app.post("/dislike")
-async def dislike(request: Request, response: Response):
-    is_authorized = check_token(request)
-    if not is_authorized:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-    return
+async def dislike(auth: dict = Depends(auth)):
+    pass
 
 
 def generate_token() -> str:

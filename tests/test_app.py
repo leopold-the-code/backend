@@ -53,12 +53,12 @@ def test_add_tags():
 
 
 def test_get_people_unauthorized():
-    resp = client.get("/people")
+    resp = client.get("/feed")
     assert resp.status_code == 401  # Unauthorized
 
 
 def test_get_people():
-    resp = client.get("/people", headers={"X-Token": "demotoken"})
+    resp = client.get("/feed", headers={"X-Token": "demotoken"})
     assert resp.status_code == 200
 
     json_data = resp.json()

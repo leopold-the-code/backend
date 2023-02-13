@@ -78,3 +78,29 @@ def test_get_people():
             swipe, headers={"X-Token": "demotoken"}, json={"id": user["id"]}
         )
         assert resp.status_code == 200
+
+
+def test_me():
+    mydata = {
+        "name": "John",
+        "surname": "Doe",
+        "description": "Chess player",
+        "birth_date": "2001-06-13",
+        "email": "exampleN.com",
+    }
+    mytoken = client.post(
+        "/register",
+        json={
+            "name": mydata["name"],
+            "surname": mydata["surname"],
+            "description": mydata["description"],
+            "birth_date": mydata["birth_date"],
+            "email": "exampleN.com",
+            "password": "12345",
+        },
+    ).json()["token"]
+
+    me = client.get("/me", headers={"X-Token": mytoken}).json()
+
+    for key, value in mydata.items():
+        assert me[key] == value

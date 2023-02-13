@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, status, Response, Depends
+from fastapi import FastAPI, Request, status, Response, Depends, HTTPException
 from pydantic import BaseModel
 from datetime import date
 from base64 import b64decode, b64encode
@@ -23,11 +23,11 @@ class TokenResponse(BaseModel):
 app = FastAPI()
 
 
-def auth(request: Request, response: Response):
+def auth(request: Request):
     is_authorized = check_token(request)
     if not is_authorized:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-    return response
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+    # TODO return authorized user in future
 
 
 @app.get("/")
@@ -41,7 +41,7 @@ async def register(user: User) -> TokenResponse:
 
 
 @app.get("/feed")
-async def get_people(auth: dict = Depends(auth)):
+async def get_people(user=Depends(auth)):
     a = {"id": 0, "name": "test", "surname": "test", "description": "test"}
     list = []
     for _ in range(10):
@@ -50,17 +50,17 @@ async def get_people(auth: dict = Depends(auth)):
 
 
 @app.post("/tag", status_code=200)
-async def add_tags(auth: dict = Depends(auth)):
+async def add_tags(user=Depends(auth)):
     pass
 
 
 @app.post("/like")
-async def like(auth: dict = Depends(auth)):
+async def like(user=Depends(auth)):
     pass
 
 
 @app.post("/dislike")
-async def dislike(auth: dict = Depends(auth)):
+async def dislike(user=Depends(auth)):
     pass
 
 

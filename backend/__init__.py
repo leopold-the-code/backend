@@ -4,6 +4,9 @@ from datetime import date
 from base64 import b64decode, b64encode
 from secrets import token_bytes
 
+from backend.db import setup_db
+from backend import models
+
 token_lenght = 64
 
 
@@ -21,6 +24,7 @@ class TokenResponse(BaseModel):
 
 
 app = FastAPI()
+setup_db(app)
 
 
 def auth(request: Request):
@@ -37,6 +41,8 @@ async def root():
 
 @app.post("/register")
 async def register(user: User) -> TokenResponse:
+    await models.User.create(email="example@example.org")
+    print(await models.User.all())
     return TokenResponse(token=generate_token())
 
 

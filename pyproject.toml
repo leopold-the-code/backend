@@ -11,6 +11,7 @@ fastapi = "^0.89.1"
 uvicorn = "^0.20.0"
 httpx = "^0.23.3"
 tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
+python-multipart = "^0.0.5"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"

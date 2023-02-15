@@ -10,3 +10,9 @@ class User(models.Model):
     birth_date = fields.CharField(max_length=255, null=True)
     password = fields.CharField(max_length=255, null=True)
     token = fields.CharField(max_length=255, null=True)
+
+
+class Image(models.Model):
+    id = fields.IntField(pk=True)
+    user = fields.ForeignKeyField("models.User")
+    path = fields.CharField(max_length=500)

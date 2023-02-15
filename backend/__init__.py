@@ -1,4 +1,7 @@
-from fastapi import FastAPI, status, Depends, HTTPException
+import logging
+import time
+from fastapi import FastAPI, status, Depends, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.security import APIKeyHeader
 from base64 import b64encode
 from secrets import token_bytes
@@ -12,6 +15,19 @@ token_lenght = 64
 
 app = FastAPI()
 setup_db(app)
+
+
+@app.on_event("startup")
+async def startup_event():
+    await models.User.create(
+        email="email@example.com",
+        name="DemoName",
+        surname="DemoSurname",
+        description="Description",
+        birth_date="2001",
+        password="12345",
+        token="demotoken",
+    )
 
 
 async def auth(
@@ -44,6 +60,25 @@ async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
     print(await models.User.all())
     return dtos.TokenResponse(token=token)
 
+
+@app.post("/upload_image")
+async def upload_image(
+    file: UploadFile, user: models.User = Depends(auth)
+) -> dtos.StadardResponse:
+    contents = await file.read()
+    path = f"media/{user.id}_{time.time_ns()}.png"
+    logging.error(f"new file created {path}")
+    with open(path, "wb") as f:
+        f.write(contents)
+    await models.Image.create(user=user, path=path)
+    logging.error(await models.Image.all())
+    return dtos.StadardResponse(message="success")
+
+
+@app.get("/get_image/{image_id}")
+async def get_image(image_id: int, user: models.User = Depends(auth)) -> FileResponse:
+    path = (await models.Image.get(id=image_id)).path
+    return FileResponse(path=path)
 
 @app.get("/feed")
 async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:

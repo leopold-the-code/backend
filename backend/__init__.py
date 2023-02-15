@@ -27,10 +27,14 @@ app = FastAPI()
 setup_db(app)
 
 
-def auth(request: Request):
+async def auth(request: Request):
     is_authorized = check_token(request)
     if not is_authorized:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+    current_user = await models.User_Pydantic.from_queryset_single(models.Users.get(token=request.headers.get("X-Token")))
+    print("auth get user")
+    print(current_user)
+    return current_user
     # TODO return authorized user in future
 
 
@@ -41,9 +45,18 @@ async def root():
 
 @app.post("/register")
 async def register(user: User) -> TokenResponse:
-    await models.User.create(email="example@example.org")
-    print(await models.User.all())
-    return TokenResponse(token=generate_token())
+    token = generate_token()
+    await models.Users.create(
+        email = user.email,
+        name = user.name,
+        surname = user.surname,
+        description = user.description,
+        birth_date = user.birth_date,
+        password = user.password,
+        token = token
+    )
+    print(await models.Users.all())
+    return TokenResponse(token=token)
 
 
 @app.get("/feed")
@@ -53,6 +66,10 @@ async def get_people(user=Depends(auth)):
     for _ in range(10):
         list.append(a)
     return {"users": list}
+
+@app.get("/me")
+async def get_me(user=Depends(auth)):
+    return user
 
 
 @app.post("/tag", status_code=200)

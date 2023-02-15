@@ -1,10 +1,43 @@
+import asyncio
+import pytest
 from fastapi.testclient import TestClient
 from backend import app
 
-client = TestClient(app)
+from tortoise.contrib.test import initializer, finalizer
 
 
-def test_create_user():
+@pytest.fixture(scope="session")
+def client():
+    loop = asyncio.new_event_loop()
+    initializer(
+        modules=["backend.models"],
+        db_url="sqlite://:memory:",
+        loop=loop,
+    )
+
+    with TestClient(app) as c:
+        yield c
+
+    finalizer()
+
+
+@pytest.fixture(scope="session")
+def demotoken(client):
+    resp = client.post(
+        "/register",
+        json={
+            "name": "John",
+            "surname": "Doe",
+            "description": "Chess player",
+            "birth_date": "2001-06-13",  # ISO 8601
+            "email": "example.com",
+            "password": "12345",
+        },
+    )
+    return resp.json()["token"]
+
+
+def test_create_user(client):
     resp = client.post(
         "/register",
         json={
@@ -20,7 +53,7 @@ def test_create_user():
     assert "token" in resp.json()
 
 
-def test_no_token_duplicates():
+def test_no_token_duplicates(client):
     user1 = client.post(
         "/register",
         json={
@@ -47,18 +80,18 @@ def test_no_token_duplicates():
     assert user1.json()["token"] != user2.json()["token"]
 
 
-def test_add_tags():
-    resp = client.post("/tag", headers={"X-Token": "demotoken"}, json={"tag": "chess"})
+def test_add_tags(demotoken, client):
+    resp = client.post("/tag", headers={"X-Token": demotoken}, json={"tag": "chess"})
     assert resp.status_code == 200
 
 
-def test_get_people_unauthorized():
+def test_get_people_unauthorized(client):
     resp = client.get("/feed")
     assert resp.status_code == 401  # Unauthorized
 
 
-def test_get_people():
-    resp = client.get("/feed", headers={"X-Token": "demotoken"})
+def test_get_people(demotoken, client):
+    resp = client.get("/feed", headers={"X-Token": demotoken})
     assert resp.status_code == 200
 
     json_data = resp.json()
@@ -75,12 +108,12 @@ def test_get_people():
 
     for user, swipe in zip(json_data["users"], swipes):
         resp = client.post(
-            swipe, headers={"X-Token": "demotoken"}, json={"id": user["id"]}
+            swipe, headers={"X-Token": demotoken}, json={"id": user["id"]}
         )
         assert resp.status_code == 200
 
 
-def test_me():
+def test_me(client):
     mydata = {
         "name": "John",
         "surname": "Doe",

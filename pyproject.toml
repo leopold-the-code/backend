@@ -16,6 +16,7 @@ tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
 black = "^23.1.0"
 ruff = "^0.0.241"
 pytest = "^7.2.1"
+mypy = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -47,5 +47,5 @@ docker build -t backend .
 docker run --rm -it -p 80:80 backend
 ```
 
-Now server is running on http://127.0.0.1/
-With swagger on http://127.0.0.1/docs
+Now server is running on http://127.0.0.1:8080/
+With swagger on http://127.0.0.1:8080/docs

@@ -1,40 +1,4 @@
-import asyncio
-import pytest
-from fastapi.testclient import TestClient
-from backend import app
-
-from tortoise.contrib.test import initializer, finalizer
-
-
-@pytest.fixture(scope="session")
-def client():
-    loop = asyncio.new_event_loop()
-    initializer(
-        modules=["backend.models.models"],
-        db_url="sqlite://:memory:",
-        loop=loop,
-    )
-
-    with TestClient(app) as c:
-        yield c
-
-    finalizer()
-
-
-@pytest.fixture(scope="session")
-def demotoken(client):
-    resp = client.post(
-        "/register",
-        json={
-            "name": "John",
-            "surname": "Doe",
-            "description": "Chess player",
-            "birth_date": "2001-06-13",  # ISO 8601
-            "email": "example.com",
-            "password": "12345",
-        },
-    )
-    return resp.json()["token"]
+from tests.test_tools import client, demotoken
 
 
 def test_create_user(client):
@@ -91,6 +55,7 @@ def test_get_people_unauthorized(client):
 
 
 def test_get_people(demotoken, client):
+    # TODO this test is now fails, because /feed generates invalid user ids (maybe)
     resp = client.get("/feed", headers={"X-Token": demotoken})
     assert resp.status_code == 200
 
@@ -108,7 +73,7 @@ def test_get_people(demotoken, client):
 
     for user, swipe in zip(json_data["users"], swipes):
         resp = client.post(
-            swipe, headers={"X-Token": demotoken}, json={"id": user["id"]}
+            swipe, headers={"X-Token": demotoken}, params={"subject": user["id"]}
         )
         assert resp.status_code == 200
 

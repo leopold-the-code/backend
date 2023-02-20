@@ -19,7 +19,7 @@ setup_db(app)
 
 @app.on_event("startup")
 async def startup_event():
-    await models.User.create(
+    await models.User.get_or_create(
         email="email@example.com",
         name="DemoName",
         surname="DemoSurname",
@@ -27,6 +27,15 @@ async def startup_event():
         birth_date="2001",
         password="12345",
         token="demotoken",
+    )
+    await models.User.get_or_create(
+        email="email@example.com",
+        name="DemoName 2",
+        surname="DemoSurname",
+        description="Description",
+        birth_date="2001",
+        password="12345",
+        token="demotoken2",
     )
 
 
@@ -80,6 +89,7 @@ async def get_image(image_id: int, user: models.User = Depends(auth)) -> FileRes
     path = (await models.Image.get(id=image_id)).path
     return FileResponse(path=path)
 
+
 @app.get("/feed")
 async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:
     person = dtos.PublicUser(
@@ -104,12 +114,36 @@ async def add_tags(user: models.User = Depends(auth)) -> dtos.StadardResponse:
 
 
 @app.post("/like")
-async def like(user: models.User = Depends(auth)) -> dtos.StadardResponse:
+async def like(
+    subject: int,
+    user: models.User = Depends(auth),
+) -> dtos.StadardResponse:
+    if subject == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail="you can't like yourself",
+        )
+    swipe, is_new_record = await models.Swipe.get_or_create(
+        swiper=user, subject_id=subject, side=True
+    )
+    print(swipe, is_new_record)
     return dtos.StadardResponse(message="success")
 
 
 @app.post("/dislike")
-async def dislike(user: models.User = Depends(auth)) -> dtos.StadardResponse:
+async def dislike(
+    subject: int,
+    user: models.User = Depends(auth),
+) -> dtos.StadardResponse:
+    if subject == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail="you can't dislike yourself",
+        )
+    swipe, is_new_record = await models.Swipe.get_or_create(
+        swiper=user, subject_id=subject, side=False
+    )
+    print(swipe, is_new_record)
     return dtos.StadardResponse(message="success")
 
 

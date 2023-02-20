@@ -16,3 +16,10 @@ class Image(models.Model):
     id = fields.IntField(pk=True)
     user = fields.ForeignKeyField("models.User")
     path = fields.CharField(max_length=500)
+
+
+class Swipe(models.Model):
+    id = fields.IntField(pk=True)
+    swiper = fields.ForeignKeyField("models.User", "my_swipes")
+    subject = fields.ForeignKeyField("models.User", "subject_in_swipes")
+    side = fields.BooleanField()  # False is left, right otherwise

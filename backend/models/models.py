@@ -23,3 +23,11 @@ class Swipe(models.Model):
     swiper = fields.ForeignKeyField("models.User", "my_swipes")
     subject = fields.ForeignKeyField("models.User", "subject_in_swipes")
     side = fields.BooleanField()  # False is left, right otherwise
+
+
+class Match(models.Model):
+    id = fields.IntField(pk=True)
+    # The person who swiped right first
+    initializer = fields.ForeignKeyField("models.User", "my_inits")
+    # the person who also answered with a swipe to the right
+    responder = fields.ForeignKeyField("models.User", "my_responds")

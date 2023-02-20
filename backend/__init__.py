@@ -7,6 +7,7 @@ from base64 import b64encode
 from secrets import token_bytes
 
 from tortoise import exceptions
+from tortoise.expressions import Q
 from backend.db import setup_db
 from backend.models import models, dtos
 
@@ -103,6 +104,21 @@ async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:
     return dtos.UserList(users=[person] * 10)
 
 
+@app.get("/matches")
+async def matches(user: models.User = Depends(auth)) -> list[dtos.PublicUser]:
+    matches: list[models.Match] = (
+        await models.Match.all()
+        .prefetch_related("initializer", "responder")
+        .filter(Q(initializer=user) | Q(responder=user))
+    )
+
+    companions: list[models.User] = [
+        match.responder if match.responder.id != user.id else match.initializer
+        for match in matches
+    ]
+    return companions
+
+
 @app.get("/me")
 async def get_me(user: models.User = Depends(auth)) -> dtos.PublicUser:
     return dtos.PublicUser.from_orm(user)
@@ -123,10 +139,24 @@ async def like(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't like yourself",
         )
-    swipe, is_new_record = await models.Swipe.get_or_create(
-        swiper=user, subject_id=subject, side=True
-    )
-    print(swipe, is_new_record)
+
+    if await models.Swipe.filter(swiper=user, subject_id=subject).count() != 0:
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail="you can't evaluate same user more than once",
+        )
+    await models.Swipe.create(swiper=user, subject_id=subject, side=True)
+    print(f"New swipe to right from {user.id} to {subject}")
+
+    try:
+        first_swipe = await models.Swipe.get(swiper_id=subject, subject=user)
+        if first_swipe.side:
+            await models.Match.create(initializer_id=subject, responder=user)
+            print("New match")
+        else:
+            print("Oh, this is not mutual")
+    except exceptions.DoesNotExist:
+        pass
     return dtos.StadardResponse(message="success")
 
 
@@ -140,10 +170,15 @@ async def dislike(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't dislike yourself",
         )
-    swipe, is_new_record = await models.Swipe.get_or_create(
-        swiper=user, subject_id=subject, side=False
-    )
-    print(swipe, is_new_record)
+
+    if await models.Swipe.filter(swiper=user, subject_id=subject).count() != 0:
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail="you can't evaluate same user more than once",
+        )
+
+    await models.Swipe.create(swiper=user, subject_id=subject, side=False)
+    print(f"New swipe to left from {user.id} to {subject}")
     return dtos.StadardResponse(message="success")
 
 

@@ -5,7 +5,7 @@ from fastapi import status, Depends, HTTPException
 from fastapi.security import APIKeyHeader
 from tortoise import exceptions as db_exceptions
 
-from backend.models import models
+from backend import models
 
 
 token_length = 64

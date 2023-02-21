@@ -7,7 +7,7 @@ from tortoise.expressions import Q
 from backend import views
 
 from backend.auth import get_user, generate_token
-from backend.models import models
+from backend import models
 from backend.config import logger
 
 router = APIRouter()

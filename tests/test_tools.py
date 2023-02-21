@@ -10,7 +10,7 @@ from tortoise.contrib.test import initializer, finalizer
 def client():
     loop = asyncio.new_event_loop()
     initializer(
-        modules=["backend.models.models"],
+        modules=["backend.models"],
         db_url="sqlite://:memory:",
         loop=loop,
     )

@@ -1,4 +1,4 @@
-from backend.models import models
+from backend import models
 
 
 async def create_demousers():

@@ -1,17 +1,14 @@
 import logging
 import time
+
 from fastapi import FastAPI, status, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from fastapi.security import APIKeyHeader
-from base64 import b64encode
-from secrets import token_bytes
-
-from tortoise import exceptions
+from tortoise import exceptions as db_exceptions
 from tortoise.expressions import Q
+
+from backend.auth import get_user, generate_token
 from backend.db import setup_db
 from backend.models import models, dtos
-
-token_lenght = 64
 
 
 app = FastAPI()
@@ -67,16 +64,6 @@ async def startup_event():
     )
 
 
-async def auth(
-    token: str | None = Depends(APIKeyHeader(name="X-Token", auto_error=False))
-) -> models.User:
-    try:
-        current_user = await models.User.get(token=token)
-    except exceptions.DoesNotExist:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
-    return current_user
-
-
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"message": "hello"}
@@ -100,7 +87,7 @@ async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
 
 @app.post("/upload_image")
 async def upload_image(
-    file: UploadFile, user: models.User = Depends(auth)
+    file: UploadFile, user: models.User = Depends(get_user)
 ) -> dtos.StadardResponse:
     contents = await file.read()
     path = f"media/{user.id}_{time.time_ns()}.png"
@@ -113,13 +100,15 @@ async def upload_image(
 
 
 @app.get("/get_image/{image_id}")
-async def get_image(image_id: int, user: models.User = Depends(auth)) -> FileResponse:
+async def get_image(
+    image_id: int, user: models.User = Depends(get_user)
+) -> FileResponse:
     path = (await models.Image.get(id=image_id)).path
     return FileResponse(path=path)
 
 
 @app.get("/feed")
-async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:
+async def get_people(user: models.User = Depends(get_user)) -> dtos.UserList:
     current_user_swipes = (
         await models.Swipe.all().prefetch_related("subject").filter(swiper_id=user.id)
     )
@@ -130,7 +119,7 @@ async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:
 
 
 @app.get("/matches")
-async def matches(user: models.User = Depends(auth)) -> list[dtos.PublicUser]:
+async def matches(user: models.User = Depends(get_user)) -> list[dtos.PublicUser]:
     matches: list[models.Match] = (
         await models.Match.all()
         .prefetch_related("initializer", "responder")
@@ -145,19 +134,19 @@ async def matches(user: models.User = Depends(auth)) -> list[dtos.PublicUser]:
 
 
 @app.get("/me")
-async def get_me(user: models.User = Depends(auth)) -> dtos.PublicUser:
+async def get_me(user: models.User = Depends(get_user)) -> dtos.PublicUser:
     return dtos.PublicUser.from_orm(user)
 
 
 @app.post("/tag", status_code=200)
-async def add_tags(user: models.User = Depends(auth)) -> dtos.StadardResponse:
+async def add_tags(user: models.User = Depends(get_user)) -> dtos.StadardResponse:
     return dtos.StadardResponse(message="success")
 
 
 @app.post("/like")
 async def like(
     subject: int,
-    user: models.User = Depends(auth),
+    user: models.User = Depends(get_user),
 ) -> dtos.StadardResponse:
     if subject == user.id:
         raise HTTPException(
@@ -180,7 +169,7 @@ async def like(
             print("New match")
         else:
             print("Oh, this is not mutual")
-    except exceptions.DoesNotExist:
+    except db_exceptions.DoesNotExist:
         pass
     return dtos.StadardResponse(message="success")
 
@@ -188,7 +177,7 @@ async def like(
 @app.post("/dislike")
 async def dislike(
     subject: int,
-    user: models.User = Depends(auth),
+    user: models.User = Depends(get_user),
 ) -> dtos.StadardResponse:
     if subject == user.id:
         raise HTTPException(
@@ -205,8 +194,3 @@ async def dislike(
     await models.Swipe.create(swiper=user, subject_id=subject, side=False)
     print(f"New swipe to left from {user.id} to {subject}")
     return dtos.StadardResponse(message="success")
-
-
-def generate_token() -> str:
-    token_b = token_bytes(token_lenght)
-    return b64encode(token_b).decode("ascii")

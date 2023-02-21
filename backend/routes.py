@@ -4,9 +4,10 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from tortoise import exceptions as db_exceptions
 from tortoise.expressions import Q
+from backend import views
 
 from backend.auth import get_user, generate_token
-from backend.models import models, dtos
+from backend.models import models
 from backend.config import logger
 
 router = APIRouter()
@@ -18,7 +19,7 @@ async def root() -> dict[str, str]:
 
 
 @router.post("/register")
-async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
+async def register(user: views.RegisterUser) -> views.TokenResponse:
     token = generate_token()
     user = await models.User.create(
         email=user.email,
@@ -30,13 +31,13 @@ async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
         token=token,
     )
     logger.info(f"New user with id {user.id} created")
-    return dtos.TokenResponse(token=token)
+    return views.TokenResponse(token=token)
 
 
 @router.post("/upload_image")
 async def upload_image(
     file: UploadFile, user: models.User = Depends(get_user)
-) -> dtos.StadardResponse:
+) -> views.StadardResponse:
     contents = await file.read()  # TODO don't read entire file
     path = f"media/{user.id}_{time.time_ns()}.png"
     with open(path, "wb") as f:  # TODO buffering
@@ -44,7 +45,7 @@ async def upload_image(
     logger.info(f"File saved at {path}")
     image = await models.Image.create(user=user, path=path)
     logger.info(f"New image with id {image.id}")
-    return dtos.StadardResponse(message="success")
+    return views.StadardResponse(message="success")
 
 
 @router.get("/get_image/{image_id}")
@@ -56,18 +57,18 @@ async def get_image(
 
 
 @router.get("/feed")
-async def get_people(user: models.User = Depends(get_user)) -> dtos.UserList:
+async def get_people(user: models.User = Depends(get_user)) -> views.UserList:
     current_user_swipes = (
         await models.Swipe.all().prefetch_related("subject").filter(swiper_id=user.id)
     )
     # TODO this is too slow
     swiped_users = [swipe.subject.id for swipe in current_user_swipes]
     users = models.User.exclude(id=user.id, id__in=swiped_users).limit(10)
-    return dtos.UserList(users=await users)
+    return views.UserList(users=await users)
 
 
 @router.get("/matches")
-async def matches(user: models.User = Depends(get_user)) -> list[dtos.PublicUser]:
+async def matches(user: models.User = Depends(get_user)) -> list[views.PublicUser]:
     matches: list[models.Match] = (
         await models.Match.all()
         .prefetch_related("initializer", "responder")
@@ -82,20 +83,20 @@ async def matches(user: models.User = Depends(get_user)) -> list[dtos.PublicUser
 
 
 @router.get("/me")
-async def get_me(user: models.User = Depends(get_user)) -> dtos.PublicUser:
-    return dtos.PublicUser.from_orm(user)
+async def get_me(user: models.User = Depends(get_user)) -> views.PublicUser:
+    return views.PublicUser.from_orm(user)
 
 
 @router.post("/tag", status_code=200)
-async def add_tags(user: models.User = Depends(get_user)) -> dtos.StadardResponse:
-    return dtos.StadardResponse(message="success")
+async def add_tags(user: models.User = Depends(get_user)) -> views.StadardResponse:
+    return views.StadardResponse(message="success")
 
 
 @router.post("/like")
 async def like(
     subject: int,
     user: models.User = Depends(get_user),
-) -> dtos.StadardResponse:
+) -> views.StadardResponse:
     if subject == user.id:
         logger.error("Client is trying to like himself")
         raise HTTPException(
@@ -121,14 +122,14 @@ async def like(
             logger.info("Oh, this is not mutual")
     except db_exceptions.DoesNotExist:
         pass
-    return dtos.StadardResponse(message="success")
+    return views.StadardResponse(message="success")
 
 
 @router.post("/dislike")
 async def dislike(
     subject: int,
     user: models.User = Depends(get_user),
-) -> dtos.StadardResponse:
+) -> views.StadardResponse:
     if subject == user.id:
         logger.error("Client is trying to dislike himself")
         raise HTTPException(
@@ -145,4 +146,4 @@ async def dislike(
 
     await models.Swipe.create(swiper=user, subject_id=subject, side=False)
     logger.info(f"New swipe to left from {user.id} to {subject}")
-    return dtos.StadardResponse(message="success")
+    return views.StadardResponse(message="success")

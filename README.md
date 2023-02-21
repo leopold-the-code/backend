@@ -1,4 +1,17 @@
-## Installation
+## Spinning up database
+
+### With docker (for local development)
+
+Run:
+
+```bash
+docker run --name localdb -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+```
+
+Then configure app settings:
+Copy file `example.env` and save it as `.env`
+
+## App Installation
 
 0. Clone and cd to repo
 

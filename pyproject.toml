@@ -13,12 +13,18 @@ httpx = "^0.23.3"
 tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
 python-multipart = "^0.0.5"
 pydantic = {extras = ["dotenv"], version = "^1.10.5"}
+aerich = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
 ruff = "^0.0.241"
 pytest = "^7.2.1"
 mypy = "^1.0.0"
+
+[tool.aerich]
+tortoise_orm = "backend.config.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."
 
 [build-system]
 requires = ["poetry-core"]

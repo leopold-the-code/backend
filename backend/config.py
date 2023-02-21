@@ -24,3 +24,14 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+TORTOISE_ORM = {
+    "connections": {"default": settings.database_url},
+    "apps": {
+        "models": {
+            "models": ["backend.models", "aerich.models"],
+            "default_connection": "default",
+        },
+    },
+}

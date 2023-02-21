@@ -2,14 +2,14 @@
 
 ### With docker (for local development)
 
-Run:
+0. Run database container:
 
 ```bash
 docker run --name localdb -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
 ```
 
-Then configure app settings:
-Copy file `example.env` and save it as `.env`
+1. Configure app settings - Copy file `example.env` and save it as `.env`
+2. Run migrations `aerich upgrade`
 
 ## App Installation
 

@@ -1,4 +1,3 @@
-import logging
 import time
 
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile
@@ -8,6 +7,7 @@ from tortoise.expressions import Q
 
 from backend.auth import get_user, generate_token
 from backend.models import models, dtos
+from backend.config import logger
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ async def root() -> dict[str, str]:
 @router.post("/register")
 async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
     token = generate_token()
-    await models.User.create(
+    user = await models.User.create(
         email=user.email,
         name=user.name,
         surname=user.surname,
@@ -29,7 +29,7 @@ async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
         password=user.password,
         token=token,
     )
-    print(await models.User.all())
+    logger.info(f"New user with id {user.id} created")
     return dtos.TokenResponse(token=token)
 
 
@@ -37,13 +37,13 @@ async def register(user: dtos.RegisterUser) -> dtos.TokenResponse:
 async def upload_image(
     file: UploadFile, user: models.User = Depends(get_user)
 ) -> dtos.StadardResponse:
-    contents = await file.read()
+    contents = await file.read()  # TODO don't read entire file
     path = f"media/{user.id}_{time.time_ns()}.png"
-    logging.error(f"new file created {path}")
-    with open(path, "wb") as f:
+    with open(path, "wb") as f:  # TODO buffering
         f.write(contents)
-    await models.Image.create(user=user, path=path)
-    logging.error(await models.Image.all())
+    logger.info(f"File saved at {path}")
+    image = await models.Image.create(user=user, path=path)
+    logger.info(f"New image with id {image.id}")
     return dtos.StadardResponse(message="success")
 
 
@@ -97,26 +97,28 @@ async def like(
     user: models.User = Depends(get_user),
 ) -> dtos.StadardResponse:
     if subject == user.id:
+        logger.error("Client is trying to like himself")
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't like yourself",
         )
 
     if await models.Swipe.filter(swiper=user, subject_id=subject).count() != 0:
+        logger.error("Client is trying to evaluate user more than once")
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't evaluate same user more than once",
         )
     await models.Swipe.create(swiper=user, subject_id=subject, side=True)
-    print(f"New swipe to right from {user.id} to {subject}")
+    logger.info(f"New swipe to right from {user.id} to {subject}")
 
     try:
         first_swipe = await models.Swipe.get(swiper_id=subject, subject=user)
         if first_swipe.side:
             await models.Match.create(initializer_id=subject, responder=user)
-            print("New match")
+            logger.info("New match")
         else:
-            print("Oh, this is not mutual")
+            logger.info("Oh, this is not mutual")
     except db_exceptions.DoesNotExist:
         pass
     return dtos.StadardResponse(message="success")
@@ -128,17 +130,19 @@ async def dislike(
     user: models.User = Depends(get_user),
 ) -> dtos.StadardResponse:
     if subject == user.id:
+        logger.error("Client is trying to dislike himself")
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't dislike yourself",
         )
 
     if await models.Swipe.filter(swiper=user, subject_id=subject).count() != 0:
+        logger.error("Client is trying to evaluate user more than once")
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
             detail="you can't evaluate same user more than once",
         )
 
     await models.Swipe.create(swiper=user, subject_id=subject, side=False)
-    print(f"New swipe to left from {user.id} to {subject}")
+    logger.info(f"New swipe to left from {user.id} to {subject}")
     return dtos.StadardResponse(message="success")

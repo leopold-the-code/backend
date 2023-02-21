@@ -38,6 +38,33 @@ async def startup_event():
         password="12345",
         token="demotoken2",
     )
+    await models.User.get_or_create(
+        email="email@example.com",
+        name="DemoName 2",
+        surname="DemoSurname",
+        description="Description",
+        birth_date="2001",
+        password="12345",
+        token="demotoken3",
+    )
+    await models.User.get_or_create(
+        email="email@example.com",
+        name="DemoName 2",
+        surname="DemoSurname",
+        description="Description",
+        birth_date="2001",
+        password="12345",
+        token="demotoken4",
+    )
+    await models.User.get_or_create(
+        email="email@example.com",
+        name="DemoName 2",
+        surname="DemoSurname",
+        description="Description",
+        birth_date="2001",
+        password="12345",
+        token="demotoken5",
+    )
 
 
 async def auth(
@@ -93,15 +120,13 @@ async def get_image(image_id: int, user: models.User = Depends(auth)) -> FileRes
 
 @app.get("/feed")
 async def get_people(user: models.User = Depends(auth)) -> dtos.UserList:
-    person = dtos.PublicUser(
-        id=0,
-        email="test",
-        name="test",
-        surname="test",
-        description="test",
-        birth_date="test",
+    current_user_swipes = (
+        await models.Swipe.all().prefetch_related("subject").filter(swiper_id=user.id)
     )
-    return dtos.UserList(users=[person] * 10)
+    # TODO this is too slow
+    swiped_users = [swipe.subject.id for swipe in current_user_swipes]
+    users = models.User.exclude(id=user.id, id__in=swiped_users).limit(10)
+    return dtos.UserList(users=await users)
 
 
 @app.get("/matches")

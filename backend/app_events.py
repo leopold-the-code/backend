@@ -1,7 +1,7 @@
 from backend import models
 
 
-async def create_demousers():
+async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName",

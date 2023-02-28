@@ -1,12 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     name: str
-    surname: str
     description: str
-    birth_date: str
+    birth_date: int
 
 
 class RegisterUser(UserBase):
@@ -18,6 +17,8 @@ class RegisterUser(UserBase):
 
 class PublicUser(UserBase):
     id: int
+    tags: list[str]
+    images: list[str]
 
     class Config:
         orm_mode = True

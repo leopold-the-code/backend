@@ -1,6 +1,5 @@
 from fastapi.testclient import TestClient
-from tortoise.contrib.test import initializer, finalizer
-from tests.test_tools import client, create_user
+from tests.test_tools import create_user
 
 # demotoken - user.id = 1
 # demotoken - user.id = 2

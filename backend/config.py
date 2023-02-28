@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite://:memory:"
     generate_schemas: bool = True
+    site_url: str = "http://127.0.0.1:8000"
 
     class Config:
         case_sensitive = False

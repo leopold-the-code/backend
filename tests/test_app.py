@@ -1,6 +1,3 @@
-from tests.test_tools import client, demotoken
-
-
 def test_create_user(client):
     resp = client.post(
         "/register",

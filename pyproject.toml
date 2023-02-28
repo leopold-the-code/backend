@@ -12,8 +12,9 @@ uvicorn = "^0.20.0"
 httpx = "^0.23.3"
 tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
 python-multipart = "^0.0.5"
-pydantic = {extras = ["dotenv"], version = "^1.10.5"}
+pydantic = {extras = ["email"], version = "^1.10.5"}
 aerich = "^0.7.1"
+pre-commit = "^3.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"

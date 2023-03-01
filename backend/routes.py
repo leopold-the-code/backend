@@ -1,3 +1,5 @@
+from pydantic import EmailStr
+
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Query
 from fastapi.responses import Response
 from tortoise import exceptions as db_exceptions
@@ -29,6 +31,12 @@ async def register(user: views.RegisterUser) -> views.TokenResponse:
     )
     logger.info(f"New user with id {created_user.name} created")
     return views.TokenResponse(token=token)
+
+
+@router.post("/login")
+async def login(email: EmailStr, password: str) -> views.TokenResponse:
+    user = await models.User.get(email=email, password=password)
+    return views.TokenResponse(token=user.token)
 
 
 @router.post("/upload_image")

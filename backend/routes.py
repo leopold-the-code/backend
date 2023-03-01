@@ -1,7 +1,5 @@
-import time
-
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from tortoise import exceptions as db_exceptions
 from tortoise.expressions import Q
 from backend import views
@@ -37,22 +35,16 @@ async def register(user: views.RegisterUser) -> views.TokenResponse:
 async def upload_image(
     file: UploadFile, user: models.User = Depends(get_user)
 ) -> views.StadardResponse:
-    contents = await file.read()  # TODO don't read entire file
-    path = f"media/{user.id}_{time.time_ns()}.png"
-    with open(path, "wb") as f:  # TODO buffering
-        f.write(contents)
-    logger.info(f"File saved at {path}")
-    image = await models.Image.create(user=user, path=path)
+    content = await file.read()
+    image = await models.Image.create(user=user, rawbytes=content)
     logger.info(f"New image with id {image.id}")
     return views.StadardResponse(message="success")
 
 
 @router.get("/get_image/{image_id}")
-async def get_image(
-    image_id: int, user: models.User = Depends(get_user)
-) -> FileResponse:
-    path = (await models.Image.get(id=image_id)).path
-    return FileResponse(path=path)
+async def get_image(image_id: int, user: models.User = Depends(get_user)) -> Response:
+    content = (await models.Image.get(id=image_id)).rawbytes
+    return Response(content=content, media_type="image/png")
 
 
 @router.get("/feed")

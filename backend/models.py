@@ -40,7 +40,7 @@ class Image(models.Model):
     user: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
         "models.User", "image_objects"
     )
-    path = fields.CharField(max_length=500)
+    rawbytes = fields.BinaryField()
 
 
 class Swipe(models.Model):

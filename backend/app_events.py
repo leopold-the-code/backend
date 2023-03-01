@@ -5,7 +5,6 @@ async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName",
-        surname="DemoSurname",
         description="Description",
         birth_date="2001",
         password="12345",
@@ -14,7 +13,6 @@ async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName 2",
-        surname="DemoSurname",
         description="Description",
         birth_date="2001",
         password="12345",
@@ -23,7 +21,6 @@ async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName 3",
-        surname="DemoSurname",
         description="Description",
         birth_date="2001",
         password="12345",
@@ -32,7 +29,6 @@ async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName 4",
-        surname="DemoSurname",
         description="Description",
         birth_date="2001",
         password="12345",
@@ -41,7 +37,6 @@ async def create_demousers() -> None:
     await models.User.get_or_create(
         email="email@example.com",
         name="DemoName 5",
-        surname="DemoSurname",
         description="Description",
         birth_date="2001",
         password="12345",

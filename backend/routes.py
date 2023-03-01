@@ -114,6 +114,18 @@ async def add_tag(
     return views.StadardResponse(message="success")
 
 
+@router.post("/geoposition")
+async def add_geoposition(
+    user: models.User = Depends(get_user),
+    longitude: float = Query(),
+    latitude: float = Query(),
+) -> views.StadardResponse:
+    user.longitude = longitude
+    user.latitude = latitude
+    await user.save()
+    return views.StadardResponse(message="success")
+
+
 @router.post("/like")
 async def like(
     subject: int,

@@ -10,6 +10,10 @@ class User(models.Model):
     birth_date = fields.CharField(max_length=255, null=True)
     password = fields.CharField(max_length=255, null=True)
     token = fields.CharField(max_length=255, null=True)
+
+    latitude = fields.FloatField(null=True)
+    longitude = fields.FloatField(null=True)
+
     tag_objects: fields.ManyToManyRelation["Tag"]
     image_objects: fields.ForeignKeyRelation["Image"]
 

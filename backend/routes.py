@@ -100,6 +100,20 @@ async def get_me(user: models.User = Depends(get_public_user)) -> views.PublicUs
     return views.PublicUser.from_orm(user)
 
 
+@router.post("/me")
+async def update_me(
+    update_data: views.UpdateUser, user: models.User = Depends(get_user)
+) -> views.StadardResponse:
+    user.update_from_dict(
+        update_data.dict(
+            exclude_none=True,
+            exclude_defaults=True,
+        )
+    )
+    await user.save()
+    return views.StadardResponse(message="success")
+
+
 @router.get("/profile/{profile_id}")
 async def get_profile(
     profile_id: int, user: models.User = Depends(get_user)
@@ -119,18 +133,6 @@ async def add_tag(
     if created:
         logger.info("New tag created")
     await tag.user.add(user)
-    return views.StadardResponse(message="success")
-
-
-@router.post("/geoposition")
-async def add_geoposition(
-    user: models.User = Depends(get_user),
-    longitude: float = Query(),
-    latitude: float = Query(),
-) -> views.StadardResponse:
-    user.longitude = longitude
-    user.latitude = latitude
-    await user.save()
     return views.StadardResponse(message="success")
 
 

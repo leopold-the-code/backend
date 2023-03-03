@@ -15,6 +15,16 @@ class RegisterUser(UserBase):
         orm_mode = True
 
 
+class UpdateUser(BaseModel):
+    email: EmailStr | None
+    name: str | None
+    description: str | None
+    birth_date: int | None
+    password: str | None
+    latitude: float | None
+    longitude: float | None
+
+
 class PublicUser(UserBase):
     id: int
     tags: list[str]

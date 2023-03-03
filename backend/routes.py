@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import EmailStr
 
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Query
@@ -191,3 +193,15 @@ async def dislike(
     await models.Swipe.create(swiper=user, subject_id=subject, side=False)
     logger.info(f"New swipe to left from {user.id} to {subject}")
     return views.StadardResponse(message="success")
+
+
+@router.get("/messages")
+async def get_messages(last_datetime: datetime, user: models.User = Depends(get_user)):
+    user_matches = [
+        match.id
+        for match in await models.Match.filter(Q(initializer=user) | Q(responder=user))
+    ]
+    messages = await models.Message.filter(
+        match__id__in=user_matches, receive_datetime__gt=last_datetime
+    )
+    return messages

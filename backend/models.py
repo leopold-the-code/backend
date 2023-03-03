@@ -1,5 +1,12 @@
 from tortoise import fields, models
 from backend.config import settings
+from enum import Enum
+
+# Words used to describe user
+# swiper / subject          - For swipes
+# initializer / responder   - For matches
+# sender / receiver         - For websocket connections
+# author                    - For messages
 
 
 class User(models.Model):
@@ -68,3 +75,17 @@ class Match(models.Model):
     responder: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
         "models.User", "my_responds"
     )
+
+
+class Message(models.Model):
+    id = fields.IntField(pk=True)
+    match = fields.ForeignKeyField("models.Match")
+    author = fields.ForeignKeyField("models.User")
+    message = fields.TextField()
+    receive_datetime = fields.DatetimeField(auto_now=True)
+
+    status = fields.IntField()
+
+    class Status(Enum):
+        UNSEEN = 0
+        SEEN = 1

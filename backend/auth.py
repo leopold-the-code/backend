@@ -11,9 +11,7 @@ from backend import models
 token_length = 64
 
 
-async def get_user(
-    token: str | None = Depends(APIKeyHeader(name="X-Token", auto_error=False)),
-) -> models.User:
+async def load_user(token: str | None) -> models.User:
     try:
         current_user = await models.User.get(token=token)
     except db_exceptions.DoesNotExist:
@@ -21,10 +19,16 @@ async def get_user(
     return current_user
 
 
+async def get_user(
+    token: str | None = Depends(APIKeyHeader(name="X-Token", auto_error=False)),
+) -> models.User:
+    return await load_user(token)
+
+
 async def get_public_user(
     token: str | None = Depends(APIKeyHeader(name="X-Token", auto_error=False)),
 ) -> models.User:
-    current_user = await get_user(token)
+    current_user = await load_user(token)
     await current_user.fetch_related("tag_objects")
     await current_user.fetch_related("image_objects")
     return current_user

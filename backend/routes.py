@@ -195,6 +195,12 @@ async def dislike(
     return views.StadardResponse(message="success")
 
 
+@router.post("/reset_swipes")
+async def reset_swipes(user: models.User = Depends(get_user)) -> views.StadardResponse:
+    await models.Swipe.filter(swiper=user).delete()
+    return views.StadardResponse(message="success")
+
+
 @router.get("/messages")
 async def get_messages(last_datetime: datetime, user: models.User = Depends(get_user)):
     user_matches = [

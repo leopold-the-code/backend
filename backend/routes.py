@@ -55,11 +55,8 @@ async def upload_image(
 async def delete_image(
     image_id: int, user: models.User = Depends(get_user)
 ) -> views.StadardResponse:
-    try:
-        image = await models.Image.get(id=image_id, user=user)
-        await image.delete()
-    except db_exceptions.DoesNotExist:
-        raise HTTPException(status_code=404, detail="Image not found")
+    image = await models.Image.get(id=image_id, user=user)
+    await image.delete()
     return views.StadardResponse(message="success")
 
 
@@ -125,7 +122,6 @@ async def update_me(
         tag, created = await models.Tag.get_or_create(value=tag_value)
         if created:
             logger.info("New tag created")
-            print(delete_tags_values)
         await tag.user.add(user)
 
         if tag_value in delete_tags_values:

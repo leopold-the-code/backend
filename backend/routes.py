@@ -51,6 +51,18 @@ async def upload_image(
     return views.StadardResponse(message="success")
 
 
+@router.delete("/delete_image/{image_id}")
+async def delete_image(
+    image_id: int, user: models.User = Depends(get_user)
+) -> views.StadardResponse:
+    try:
+        image = await models.Image.get(id=image_id, user=user)
+        await image.delete()
+    except db_exceptions.DoesNotExist:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return views.StadardResponse(message="success")
+
+
 @router.get("/get_image/{image_id}")
 async def get_image(image_id: int, user: models.User = Depends(get_user)) -> Response:
     content = (await models.Image.get(id=image_id)).rawbytes
@@ -106,6 +118,26 @@ async def get_me(user: models.User = Depends(get_public_user)) -> views.PublicUs
 async def update_me(
     update_data: views.UpdateUser, user: models.User = Depends(get_user)
 ) -> views.StadardResponse:
+    delete_tags = await user.tag_objects.all()
+    delete_tags_values = [tag.value for tag in delete_tags]
+
+    for tag_value in update_data.tags:
+        tag, created = await models.Tag.get_or_create(value=tag_value)
+        if created:
+            logger.info("New tag created")
+            print(delete_tags_values)
+        await tag.user.add(user)
+
+        if tag_value in delete_tags_values:
+            delete_tags_values.remove(tag_value)
+            logger.info(f"Tag {tag_value} removed from user {user.id}")
+
+    for tag_value in delete_tags_values:
+        tag = await models.Tag.get_or_none(value=tag_value)
+        if tag is not None:
+            logger.info(f"tag {tag_value} deleted from user {user.id}")
+            await tag.user.remove(user)
+
     user.update_from_dict(
         update_data.dict(
             exclude_none=True,

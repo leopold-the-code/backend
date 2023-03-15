@@ -23,6 +23,7 @@ class UpdateUser(BaseModel):
     password: str | None
     latitude: float | None
     longitude: float | None
+    tags: list[str] | None
 
 
 class PublicUser(UserBase):

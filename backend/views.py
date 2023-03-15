@@ -43,5 +43,5 @@ class TokenResponse(BaseModel):
     token: str
 
 
-class StadardResponse(BaseModel):
+class StandardResponse(BaseModel):
     message: str

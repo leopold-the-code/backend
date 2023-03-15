@@ -44,20 +44,20 @@ async def login(email: EmailStr, password: str) -> views.TokenResponse:
 @router.post("/upload_image")
 async def upload_image(
     file: UploadFile, user: models.User = Depends(get_user)
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     content = await file.read()
     image = await models.Image.create(user=user, rawbytes=content)
     logger.info(f"New image with id {image.id}")
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.delete("/delete_image/{image_id}")
 async def delete_image(
     image_id: int, user: models.User = Depends(get_user)
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     image = await models.Image.get(id=image_id, user=user)
     await image.delete()
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.get("/get_image/{image_id}")
@@ -114,7 +114,7 @@ async def get_me(user: models.User = Depends(get_public_user)) -> views.PublicUs
 @router.post("/me")
 async def update_me(
     update_data: views.UpdateUser, user: models.User = Depends(get_user)
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     delete_tags = await user.tag_objects.all()
     delete_tags_values = [tag.value for tag in delete_tags]
 
@@ -141,7 +141,7 @@ async def update_me(
         )
     )
     await user.save()
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.get("/profile/{profile_id}")
@@ -158,19 +158,19 @@ async def get_profile(
 @router.post("/tag", status_code=200)
 async def add_tag(
     user: models.User = Depends(get_user), tag_value: str = Query()
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     tag, created = await models.Tag.get_or_create(value=tag_value)
     if created:
         logger.info("New tag created")
     await tag.user.add(user)
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.post("/like")
 async def like(
     subject: int,
     user: models.User = Depends(get_user),
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     if subject == user.id:
         logger.error("Client is trying to like himself")
         raise HTTPException(
@@ -196,14 +196,14 @@ async def like(
             logger.info("Oh, this is not mutual")
     except db_exceptions.DoesNotExist:
         pass
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.post("/dislike")
 async def dislike(
     subject: int,
     user: models.User = Depends(get_user),
-) -> views.StadardResponse:
+) -> views.StandardResponse:
     if subject == user.id:
         logger.error("Client is trying to dislike himself")
         raise HTTPException(
@@ -220,13 +220,13 @@ async def dislike(
 
     await models.Swipe.create(swiper=user, subject_id=subject, side=False)
     logger.info(f"New swipe to left from {user.id} to {subject}")
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.post("/reset_swipes")
-async def reset_swipes(user: models.User = Depends(get_user)) -> views.StadardResponse:
+async def reset_swipes(user: models.User = Depends(get_user)) -> views.StandardResponse:
     await models.Swipe.filter(swiper=user).delete()
-    return views.StadardResponse(message="success")
+    return views.StandardResponse(message="success")
 
 
 @router.get("/messages")

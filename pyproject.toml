@@ -15,6 +15,8 @@ python-multipart = "^0.0.5"
 pydantic = {extras = ["email"], version = "^1.10.5"}
 aerich = "^0.7.1"
 pre-commit = "^3.1.1"
+torch = { url = "https://download.pytorch.org/whl/cpu/torch-2.0.0%2Bcpu-cp310-cp310-linux_x86_64.whl"}
+numpy = "^1.24.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"

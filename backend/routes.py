@@ -12,6 +12,7 @@ from backend.auth import get_user, get_public_user, generate_token
 from backend import models
 from backend.config import logger
 
+
 router = APIRouter()
 
 
@@ -239,3 +240,106 @@ async def get_messages(last_datetime: datetime, user: models.User = Depends(get_
         match__id__in=user_matches, receive_datetime__gt=last_datetime
     )
     return messages
+
+
+@router.post("/train_nn")
+async def train_nn():
+    # xs, ys = await ml.load_data()
+
+    xs = []
+    ys = []
+    # xs = [[22, 22, 5.7796794630746025, 0.3333333333333333]]
+    # ys = [[1.0]]
+
+    from random import random
+
+    for _ in range(10000):
+        sim = random()
+        xs.append([random() * 70, random() * 70, random() * 15, sim])
+        ys.append([1.0 if sim > 0.5 else 0])
+        # ys.append([1])
+    # print(xs)
+    # print(ys)
+    from torch.utils.data import TensorDataset, DataLoader
+    import torch
+    from torch import nn
+
+    xs_tensor = torch.tensor(xs, dtype=torch.float32)
+    ys_tensor = torch.tensor(ys, dtype=torch.float32)
+
+    # Create a TensorDataset from the tensors
+    dataset = TensorDataset(xs_tensor, ys_tensor)
+
+    # Create a DataLoader from the dataset
+    dataloader = DataLoader(dataset, batch_size=100)
+
+    device = "cpu"
+    print(f"Using {device} device")
+
+    # Define model
+    class NeuralNetwork(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear_relu_stack = nn.Sequential(
+                nn.Linear(4, 32),
+                nn.ReLU(),
+                nn.Linear(32, 32),
+                nn.ReLU(),
+                nn.Linear(32, 1),
+                nn.Sigmoid(),
+            )
+
+        def forward(self, x):
+            x = self.linear_relu_stack(x)
+            return x
+
+    model = NeuralNetwork().to(device)
+    print(model)
+
+    # loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+
+    # train
+    def train(dataloader, model, loss_fn, optimizer):
+        size = len(dataloader.dataset)
+        model.train()
+        for batch, (X, y) in enumerate(dataloader):
+            X, y = X.to(device), y.to(device)
+            # print(X)
+            # print(y)
+            # Compute prediction error
+            pred = model(X)
+
+            # print("PRED", pred)
+            # print("Y", y)
+
+            loss = loss_fn(pred, y)
+            # print("LOSS", loss.item())
+
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if (batch) % 20 == 0:
+                loss, current = loss.item(), (batch + 1) * len(X)
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+    epochs = 25
+    for t in range(epochs):
+        print(f"Epoch {t+1}\n-------------------------------")
+        train(dataloader, model, loss_fn, optimizer)
+        # test(test_dataloader, model, loss_fn)
+    print("Done!")
+
+    # torch.save(model.state_dict(), "model.pth")
+
+    model.eval()
+    with torch.no_grad():
+        output = model.forward(torch.tensor([22.0, 22.0, 5.0, 1.0]))
+        print(output)
+    model.eval()
+    with torch.no_grad():
+        output = model.forward(torch.tensor([22.0, 22.0, 5.0, 0.0]))
+        print(output)

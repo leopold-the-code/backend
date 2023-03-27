@@ -116,23 +116,23 @@ async def update_me(
     update_data: views.UpdateUser, user: models.User = Depends(get_user)
 ) -> views.StandardResponse:
     delete_tags = await user.tag_objects.all()
-    delete_tags_values = [tag.value for tag in delete_tags]
+    delete_tags_values = set([tag.value for tag in delete_tags])
+    if update_data.tags is not None:
+        for tag_value in update_data.tags:
+            tag, created = await models.Tag.get_or_create(value=tag_value)
+            if created:
+                logger.info("New tag created")
+            await tag.user.add(user)
 
-    for tag_value in update_data.tags:
-        tag, created = await models.Tag.get_or_create(value=tag_value)
-        if created:
-            logger.info("New tag created")
-        await tag.user.add(user)
+            if tag_value in delete_tags_values:
+                delete_tags_values.remove(tag_value)
+                logger.info(f"Tag {tag_value} removed from user {user.id}")
 
-        if tag_value in delete_tags_values:
-            delete_tags_values.remove(tag_value)
-            logger.info(f"Tag {tag_value} removed from user {user.id}")
-
-    for tag_value in delete_tags_values:
-        tag = await models.Tag.get_or_none(value=tag_value)
-        if tag is not None:
-            logger.info(f"tag {tag_value} deleted from user {user.id}")
-            await tag.user.remove(user)
+        for tag_value in delete_tags_values:
+            tag = await models.Tag.get_or_none(value=tag_value)
+            if tag is not None:
+                logger.info(f"tag {tag_value} deleted from user {user.id}")
+                await tag.user.remove(user)
 
     user.update_from_dict(
         update_data.dict(

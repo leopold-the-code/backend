@@ -29,7 +29,7 @@ class UpdateUser(BaseModel):
 class PublicUser(UserBase):
     id: int
     tags: list[str]
-    images: list[str]
+    images: list[int]
 
     class Config:
         orm_mode = True

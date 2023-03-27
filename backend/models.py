@@ -1,5 +1,4 @@
 from tortoise import fields, models
-from backend.config import settings
 from enum import Enum
 
 # Words used to describe user
@@ -29,10 +28,8 @@ class User(models.Model):
         return [tag.value for tag in self.tag_objects]
 
     @property
-    def images(self) -> list[str]:
-        return [
-            f"{settings.site_url}/get_image/{image.id}" for image in self.image_objects
-        ]
+    def images(self) -> list[int]:
+        return [image.id for image in self.image_objects]
 
 
 class Tag(models.Model):

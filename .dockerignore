@@ -149,3 +149,11 @@ site
 # created by virtualenv automatically
 .venv\**\*
 fly.toml
+
+
+.vscode/
+media/*.jpg
+media/*.png
+
+
+*.pth

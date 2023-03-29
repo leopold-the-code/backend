@@ -132,3 +132,6 @@ dmypy.json
 .vscode/
 media/*.jpg
 media/*.png
+
+
+*.pth

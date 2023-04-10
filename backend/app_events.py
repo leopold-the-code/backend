@@ -3,7 +3,7 @@ from backend import models
 
 async def create_demousers() -> None:
     user1, created = await models.User.get_or_create(
-        email="email@example.com",
+        email="email1@example.com",
         name="DemoName",
         description="Description",
         birth_date="2001",
@@ -13,7 +13,7 @@ async def create_demousers() -> None:
         longitude=76.91,
     )
     await models.User.get_or_create(
-        email="email@example.com",
+        email="email2@example.com",
         name="DemoName 2",
         description="Description",
         birth_date="2001",
@@ -21,7 +21,7 @@ async def create_demousers() -> None:
         token="demotoken2",
     )
     await models.User.get_or_create(
-        email="email@example.com",
+        email="email3@example.com",
         name="DemoName 3",
         description="Description",
         birth_date="2001",
@@ -29,7 +29,7 @@ async def create_demousers() -> None:
         token="demotoken3",
     )
     await models.User.get_or_create(
-        email="email@example.com",
+        email="email4@example.com",
         name="DemoName 4",
         description="Description",
         birth_date="2001",
@@ -37,7 +37,7 @@ async def create_demousers() -> None:
         token="demotoken4",
     )
     user5, _ = await models.User.get_or_create(
-        email="email@example.com",
+        email="email5@example.com",
         name="DemoName 5",
         description="Description",
         birth_date="2001",

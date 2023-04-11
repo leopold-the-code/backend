@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import EmailStr
 
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from tortoise import exceptions as db_exceptions
 from tortoise.expressions import Q
 from backend import views
@@ -24,14 +24,21 @@ async def root() -> dict[str, str]:
 @router.post("/register")
 async def register(user: views.RegisterUser) -> views.TokenResponse:
     token = generate_token()
-    created_user = await models.User.create(
-        email=user.email,
-        name=user.name,
-        description=user.description,
-        birth_date=user.birth_date,
-        password=user.password,
-        token=token,
-    )
+    try:
+        created_user = await models.User.create(
+            email=user.email,
+            name=user.name,
+            description=user.description,
+            birth_date=user.birth_date,
+            password=user.password,
+            token=token,
+        )
+    except db_exceptions.IntegrityError:
+        return JSONResponse(
+            status_code=status.HTTP_418_IM_A_TEAPOT,
+            content={"message": "Email is already existed"},
+        )
+
     logger.info(f"New user with id {created_user.name} created")
     return views.TokenResponse(token=token)
 

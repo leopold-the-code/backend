@@ -10,12 +10,12 @@ from enum import Enum
 
 class User(models.Model):
     id = fields.IntField(pk=True)
-    email = fields.CharField(max_length=255, null=True)
+    email = fields.CharField(max_length=255, null=True, unique=True)
     name = fields.CharField(max_length=255, null=True)
     description = fields.CharField(max_length=255, null=True)
     birth_date = fields.IntField(null=True)
     password = fields.CharField(max_length=255, null=True)
-    token = fields.CharField(max_length=255, null=True)
+    token = fields.CharField(max_length=255, null=True, unique=True)
 
     latitude = fields.FloatField(null=True)
     longitude = fields.FloatField(null=True)

@@ -3,13 +3,13 @@ from datetime import datetime
 from pydantic import EmailStr
 
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from tortoise import exceptions as db_exceptions
 from tortoise.expressions import Q
 from backend import views
 
 from backend.auth import get_user, get_public_user, generate_token
-from backend import models, ml
+from backend import models, ml, geo
 from backend.config import logger
 
 
@@ -24,14 +24,21 @@ async def root() -> dict[str, str]:
 @router.post("/register")
 async def register(user: views.RegisterUser) -> views.TokenResponse:
     token = generate_token()
-    created_user = await models.User.create(
-        email=user.email,
-        name=user.name,
-        description=user.description,
-        birth_date=user.birth_date,
-        password=user.password,
-        token=token,
-    )
+    try:
+        created_user = await models.User.create(
+            email=user.email,
+            name=user.name,
+            description=user.description,
+            birth_date=user.birth_date,
+            password=user.password,
+            token=token,
+        )
+    except db_exceptions.IntegrityError:
+        return JSONResponse(
+            status_code=status.HTTP_418_IM_A_TEAPOT,
+            content={"message": "Email is already existed"},
+        )
+
     logger.info(f"New user with id {created_user.name} created")
     return views.TokenResponse(token=token)
 
@@ -82,7 +89,16 @@ async def get_people(user: models.User = Depends(get_user)) -> views.UserList:
         .limit(10)
     )
 
-    return views.UserList(users=await users)
+    users_list = await users
+    result = views.UserList(users=users_list)
+    for i, u in enumerate(result.users):
+        u.distance = geo.calculate_with_noise(
+            user.latitude,
+            user.longitude,
+            users_list[i].latitude,
+            users_list[i].longitude,
+        )
+    return result
 
 
 @router.get("/matches")
@@ -98,18 +114,22 @@ async def matches(user: models.User = Depends(get_user)) -> list[views.PublicUse
         .filter(Q(initializer=user) | Q(responder=user))
     )
 
-    companions: list[views.PublicUser] = [
-        views.PublicUser.from_orm(
-            match.responder if match.responder.id != user.id else match.initializer
+    companions: list[views.PublicUser] = []
+
+    for match in matches:
+        u = match.responder if match.responder.id != user.id else match.initializer
+        companion = views.PublicUser.from_orm(u)
+        companion.distance = geo.calculate_with_noise(
+            user.latitude, user.longitude, u.latitude, u.longitude
         )
-        for match in matches
-    ]
+        companions.append(companion)
+
     return companions
 
 
 @router.get("/me")
-async def get_me(user: models.User = Depends(get_public_user)) -> views.PublicUser:
-    return views.PublicUser.from_orm(user)
+async def get_me(user: models.User = Depends(get_public_user)) -> views.MeUser:
+    return views.MeUser.from_orm(user)
 
 
 @router.post("/me")
@@ -149,11 +169,15 @@ async def update_me(
 async def get_profile(
     profile_id: int, user: models.User = Depends(get_user)
 ) -> views.PublicUser:
-    return views.PublicUser.from_orm(
-        await models.User.get(id=profile_id).prefetch_related(
-            "tag_objects", "image_objects"
-        )
+    profile_owner = await models.User.get(id=profile_id).prefetch_related(
+        "tag_objects", "image_objects"
     )
+
+    result = views.PublicUser.from_orm(profile_owner)
+    result.distance = geo.calculate_with_noise(
+        user.latitude, user.longitude, profile_owner.latitude, profile_owner.longitude
+    )
+    return result
 
 
 @router.post("/tag", status_code=200)

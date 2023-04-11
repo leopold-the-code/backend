@@ -30,9 +30,15 @@ class PublicUser(UserBase):
     id: int
     tags: list[str]
     images: list[int]
+    distance: float | None = None
 
     class Config:
         orm_mode = True
+
+
+class MeUser(PublicUser):
+    latitude: float
+    longitude: float
 
 
 class UserList(BaseModel):

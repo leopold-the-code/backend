@@ -13,7 +13,7 @@ class User(models.Model):
     email = fields.CharField(max_length=255, null=True)
     name = fields.CharField(max_length=255, null=True)
     description = fields.CharField(max_length=255, null=True)
-    birth_date = fields.CharField(max_length=255, null=True)
+    birth_date = fields.IntField(null=True)
     password = fields.CharField(max_length=255, null=True)
     token = fields.CharField(max_length=255, null=True)
 

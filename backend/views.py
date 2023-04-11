@@ -35,6 +35,11 @@ class PublicUser(UserBase):
         orm_mode = True
 
 
+class MeUser(PublicUser):
+    latitude: float
+    longitude: float
+
+
 class UserList(BaseModel):
     users: list[PublicUser]
 

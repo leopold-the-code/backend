@@ -108,8 +108,8 @@ async def matches(user: models.User = Depends(get_user)) -> list[views.PublicUse
 
 
 @router.get("/me")
-async def get_me(user: models.User = Depends(get_public_user)) -> views.PublicUser:
-    return views.PublicUser.from_orm(user)
+async def get_me(user: models.User = Depends(get_public_user)) -> views.MeUser:
+    return views.MeUser.from_orm(user)
 
 
 @router.post("/me")

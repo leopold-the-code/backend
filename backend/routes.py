@@ -9,7 +9,7 @@ from tortoise.expressions import Q
 from backend import views
 
 from backend.auth import get_user, get_public_user, generate_token
-from backend import models, ml
+from backend import models, ml, geo
 from backend.config import logger
 
 
@@ -82,7 +82,16 @@ async def get_people(user: models.User = Depends(get_user)) -> views.UserList:
         .limit(10)
     )
 
-    return views.UserList(users=await users)
+    users_list = await users
+    result = views.UserList(users=users_list)
+    for i, u in enumerate(result.users):
+        u.distance = geo.calculate_with_noise(
+            user.latitude,
+            user.longitude,
+            users_list[i].latitude,
+            users_list[i].longitude,
+        )
+    return result
 
 
 @router.get("/matches")
@@ -98,12 +107,16 @@ async def matches(user: models.User = Depends(get_user)) -> list[views.PublicUse
         .filter(Q(initializer=user) | Q(responder=user))
     )
 
-    companions: list[views.PublicUser] = [
-        views.PublicUser.from_orm(
-            match.responder if match.responder.id != user.id else match.initializer
+    companions: list[views.PublicUser] = []
+
+    for match in matches:
+        u = match.responder if match.responder.id != user.id else match.initializer
+        companion = views.PublicUser.from_orm(u)
+        companion.distance = geo.calculate_with_noise(
+            user.latitude, user.longitude, u.latitude, u.longitude
         )
-        for match in matches
-    ]
+        companions.append(companion)
+
     return companions
 
 
@@ -149,11 +162,15 @@ async def update_me(
 async def get_profile(
     profile_id: int, user: models.User = Depends(get_user)
 ) -> views.PublicUser:
-    return views.PublicUser.from_orm(
-        await models.User.get(id=profile_id).prefetch_related(
-            "tag_objects", "image_objects"
-        )
+    profile_owner = await models.User.get(id=profile_id).prefetch_related(
+        "tag_objects", "image_objects"
     )
+
+    result = views.PublicUser.from_orm(profile_owner)
+    result.distance = geo.calculate_with_noise(
+        user.latitude, user.longitude, profile_owner.latitude, profile_owner.longitude
+    )
+    return result
 
 
 @router.post("/tag", status_code=200)

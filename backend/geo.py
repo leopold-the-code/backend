@@ -1,10 +1,18 @@
 import math
+import random
+
+mb_float = float | None
 
 
-def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def calculate_distance(
+    lat1: mb_float, lon1: mb_float, lat2: mb_float, lon2: mb_float
+) -> mb_float:
     """
     Calculate distance in kilometers
     """
+    if any(x is None for x in [lat1, lon1, lat2, lon2]):
+        return None
+
     # Convert latitude and longitude from degrees to radians
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
 
@@ -23,3 +31,15 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     # Calculate the distance
     distance = c * r
     return distance
+
+
+def add_noise(distance: mb_float) -> mb_float:
+    if distance is None:
+        return None
+    return round(distance + random.random() * 3, 1)
+
+
+def calculate_with_noise(
+    lat1: mb_float, lon1: mb_float, lat2: mb_float, lon2: mb_float
+) -> mb_float:
+    return add_noise(calculate_distance(lat1, lon1, lat2, lon2))

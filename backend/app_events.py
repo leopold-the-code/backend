@@ -61,3 +61,5 @@ async def create_demousers() -> None:
     await user5.tag_objects.add(tag5)
 
     await models.Swipe.get_or_create(swiper=user1, subject=user5, side=True)
+
+    await models.Match.get_or_create(initializer=user1, responder=user5)

@@ -37,8 +37,8 @@ class PublicUser(UserBase):
 
 
 class MeUser(PublicUser):
-    latitude: float
-    longitude: float
+    latitude: float | None
+    longitude: float | None
 
 
 class UserList(BaseModel):

@@ -7,3 +7,5 @@ WORKDIR /proj
 RUN pip install .
 
 CMD [ "uvicorn", "backend:app", "--host", "0.0.0.0", "--port", "8080" ]
+
+
